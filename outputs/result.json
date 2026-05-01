@@ -1,0 +1,18 @@
+{
+  "tool": "signal_enhancer",
+  "version": "0.1",
+  "observer_only": true,
+  "thread_sha256": "63c1885e81edee6fe57f97c483c7142a6961e77dd9f1232d314e04923b3fe19a",
+  "reply_sha256": null,
+  "fit": "PASS",
+  "recommendation": "COMMENT",
+  "scores": {
+    "execution_relevance": 7,
+    "leakage_risk": 0,
+    "escalation_risk": 0
+  },
+  "reasons": [
+    "Thread is execution-bound relevant."
+  ],
+  "safe_comment_template": "This lands at the execution boundary.\n\nThe key question is whether action can still bind under present-state proof.\n\nIf proof is missing, partial, reconstructed, or carried from upstream:\n\n\u2192 no bind\n\u2192 no effect\n\nPASS is observable:\n\n\u2192 withhold a required condition at bind\n\u2192 execution must not occur\n\u2192 no side-effect surface changes\n\nThat is where governance becomes real.\n"
+}
