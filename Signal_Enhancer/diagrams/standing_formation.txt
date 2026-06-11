@@ -1,0 +1,29 @@
+STANDING FORMATION
+
+Recognition
+↓
+Usefulness
+↓
+Trust
+↓
+Reliance
+↓
+Expectation
+↓
+Dependency
+↓
+Preservation
+↓
+Standing Candidate
+↓
+Protected Standing
+↓
+Authority-like Interpretation
+
+Object Integrity
+≠
+Relationship Integrity
+
+Object Visibility
+≠
+Standing Visibility

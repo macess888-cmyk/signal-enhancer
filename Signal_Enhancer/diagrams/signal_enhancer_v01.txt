@@ -1,0 +1,37 @@
+SIGNAL ENHANCER v0.1
+
+Reality
+↓
+Signals
+↓
+Pulse Sensor
+↓
+Movement Sensor
+↓
+Phase Sensor
+↓
+Relationship Sensor
+↓
+Boundary Sensor
+↓
+Pressure Sensor
+↓
+Standing Detection
+↓
+Consequence Horizon Detection
+↓
+Observation Record
+
+Observation
+≠
+Authority
+
+Signal
+≠
+Decision
+
+Visibility
+≠
+Governance
+
+UNKNOWN → HOLD

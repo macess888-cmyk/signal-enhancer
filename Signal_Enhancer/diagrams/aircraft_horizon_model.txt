@@ -1,0 +1,31 @@
+AIRCRAFT HORIZON MODEL
+
+Weak Signal
+↓
+Pattern
+↓
+Pressure
+↓
+Trajectory
+↓
+Consequence Horizon
+↓
+Potential Consequence
+
+Observation Distance
+↓
+Correction Opportunity
+↓
+Outcome
+
+# Large Horizon
+
+Small Corrections
+
+# Small Horizon
+
+Large Corrections
+
+# No Horizon
+
+Consequence Arrives First
