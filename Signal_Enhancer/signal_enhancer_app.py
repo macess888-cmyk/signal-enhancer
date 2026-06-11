@@ -1,10 +1,11 @@
 import re
+from collections import Counter
 from datetime import datetime
 from pathlib import Path
 
 import streamlit as st
 
-st.set_page_config(page_title="Signal Enhancer v0.3", layout="wide")
+st.set_page_config(page_title="Signal Enhancer v0.4", layout="wide")
 
 BASE = Path(__file__).parent
 TELEMETRY = BASE / "telemetry"
@@ -27,9 +28,25 @@ def read_file(path: Path) -> str:
 
 
 def extract_section(text: str, section: str) -> str:
-    pattern = rf"{section}\s*\n\n(.*?)(?:\n\n─|\Z)"
-    match = re.search(pattern, text, re.DOTALL)
-    return match.group(1).strip() if match else "not_found"
+    lines = text.splitlines()
+    section = section.strip().upper()
+
+    for i, line in enumerate(lines):
+        if line.strip().upper() == section:
+            collected = []
+
+            for next_line in lines[i + 1:]:
+                stripped = next_line.strip()
+
+                if stripped.startswith("─"):
+                    break
+
+                if stripped:
+                    collected.append(stripped)
+
+            return "\n".join(collected).strip() if collected else "not_found"
+
+    return "not_found"
 
 
 def observation_files():
@@ -58,7 +75,12 @@ def compare_observation_texts(text_a: str, text_b: str):
         else:
             changed.append(sensor)
 
-        if "unknown" in value_a.lower() or "unknown" in value_b.lower():
+        if (
+            "unknown" in value_a.lower()
+            or "unknown" in value_b.lower()
+            or "not_found" in value_a.lower()
+            or "not_found" in value_b.lower()
+        ):
             unknowns.append(sensor)
 
         rows.append({
@@ -79,10 +101,64 @@ def compare_observation_texts(text_a: str, text_b: str):
     }
 
 
-st.title("Signal Enhancer v0.3")
+def safe_filename(text: str) -> str:
+    cleaned = text.strip().lower()
+    cleaned = re.sub(r"[^a-z0-9]+", "_", cleaned)
+    cleaned = cleaned.strip("_")
+    return cleaned or "untitled"
+
+
+def summarize_observation(path: Path) -> dict:
+    text = read_file(path)
+
+    return {
+        "File": path.name,
+        "Target": extract_section(text, "Target"),
+        "Pulse": extract_section(text, "PULSE"),
+        "Movement": extract_section(text, "MOVEMENT"),
+        "Phase": extract_section(text, "PHASE"),
+        "Relationship": extract_section(text, "RELATIONSHIP"),
+        "Boundary": extract_section(text, "BOUNDARY"),
+        "Pressure": extract_section(text, "PRESSURE"),
+        "Standing": extract_section(text, "STANDING"),
+        "Consequence Horizon": extract_section(text, "CONSEQUENCE HORIZON"),
+        "Notes": extract_section(text, "NOTES"),
+    }
+
+
+def build_frequency_counter(files, sensor: str) -> Counter:
+    counter = Counter()
+
+    for file in files:
+        text = read_file(file)
+        value = extract_section(text, sensor)
+        counter[value] += 1
+
+    return counter
+
+
+def count_unknown_surfaces(files) -> Counter:
+    counter = Counter()
+
+    for file in files:
+        text = read_file(file)
+
+        for sensor in SENSORS:
+            value = extract_section(text, sensor)
+            if "unknown" in value.lower() or "not_found" in value.lower():
+                counter[sensor] += 1
+
+    return counter
+
+
+st.title("Signal Enhancer v0.4")
 st.caption("Observation ≠ Authority | Signal ≠ Decision | UNKNOWN → HOLD")
 
-tab1, tab2 = st.tabs(["Create Observation", "Compare Observations"])
+tab1, tab2, tab3 = st.tabs([
+    "Create Observation",
+    "Compare Observations",
+    "Observation Explorer",
+])
 
 # -------------------------
 # TAB 1: CREATE OBSERVATION
@@ -150,8 +226,7 @@ with tab1:
 
     if st.button("Generate Observation Record"):
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        safe_target = target.strip().replace(" ", "_").lower() or "untitled"
-        filename = TELEMETRY / f"observation_{safe_target}_{timestamp}.md"
+        filename = TELEMETRY / f"observation_{safe_filename(target)}_{timestamp}.md"
 
         content = f"""SIGNAL ENHANCER OBSERVATION
 
@@ -234,7 +309,7 @@ NOTES
 
 ────────────────────────────────────
 
-BOUNDARY
+BOUNDARY STATEMENT
 
 This record observes signals only.
 
@@ -362,7 +437,7 @@ with tab2:
                 lines.append("")
 
             lines.extend([
-                "BOUNDARY",
+                "BOUNDARY STATEMENT",
                 "",
                 "This comparison observes signal alignment only.",
                 "",
@@ -375,3 +450,109 @@ with tab2:
 
             filename.write_text("\n".join(lines), encoding="utf-8")
             st.success(f"Comparison saved: {filename.name}")
+
+# -------------------------
+# TAB 3: OBSERVATION EXPLORER
+# -------------------------
+with tab3:
+    st.subheader("Observation Explorer")
+
+    files = observation_files()
+
+    if not files:
+        st.info("No observation_*.md files found in telemetry/.")
+    else:
+        summaries = [summarize_observation(file) for file in files]
+
+        st.markdown("### Corpus Status")
+
+        col_a, col_b, col_c = st.columns(3)
+
+        with col_a:
+            st.metric("Observation Files", len(files))
+
+        with col_b:
+            unknown_counter = count_unknown_surfaces(files)
+            st.metric("UNKNOWN Surfaces", sum(unknown_counter.values()))
+
+        with col_c:
+            st.metric("Architecture", "FROZEN")
+
+        st.divider()
+
+        search_text = st.text_input(
+            "Search observations",
+            placeholder="Search target, notes, source text, or signal values..."
+        )
+
+        sort_mode = st.selectbox(
+            "Sort",
+            ["Newest First", "Oldest First", "Filename A-Z", "Filename Z-A"]
+        )
+
+        display_files = files.copy()
+
+        if sort_mode == "Oldest First":
+            display_files = sorted(display_files, key=lambda f: f.stat().st_mtime)
+        elif sort_mode == "Filename A-Z":
+            display_files = sorted(display_files, key=lambda f: f.name.lower())
+        elif sort_mode == "Filename Z-A":
+            display_files = sorted(display_files, key=lambda f: f.name.lower(), reverse=True)
+
+        if search_text:
+            filtered_files = []
+
+            for file in display_files:
+                text = read_file(file)
+
+                if search_text.lower() in text.lower() or search_text.lower() in file.name.lower():
+                    filtered_files.append(file)
+
+            display_files = filtered_files
+
+        st.markdown("### Observation List")
+
+        if not display_files:
+            st.warning("No observations matched the current search.")
+        else:
+            selected_file = st.selectbox(
+                "Open Observation",
+                [f.name for f in display_files]
+            )
+
+            selected_path = TELEMETRY / selected_file
+            selected_text = read_file(selected_path)
+            selected_summary = summarize_observation(selected_path)
+
+            st.markdown("### Selected Observation Summary")
+            st.table([selected_summary])
+
+            with st.expander("Raw Observation", expanded=False):
+                st.text(selected_text)
+
+        st.divider()
+
+        st.markdown("### Frequency Analysis")
+
+        freq_col_1, freq_col_2, freq_col_3 = st.columns(3)
+
+        with freq_col_1:
+            st.markdown("#### Pulse")
+            st.json(dict(build_frequency_counter(files, "PULSE")))
+
+        with freq_col_2:
+            st.markdown("#### Pressure")
+            st.json(dict(build_frequency_counter(files, "PRESSURE")))
+
+        with freq_col_3:
+            st.markdown("#### Standing")
+            st.json(dict(build_frequency_counter(files, "STANDING")))
+
+        st.markdown("### UNKNOWN / HOLD Frequency")
+
+        if unknown_counter:
+            st.json(dict(unknown_counter))
+        else:
+            st.success("No UNKNOWN or not_found surfaces detected.")
+
+        st.caption("Observation Explorer observes stored records only. It grants no authority.")
