@@ -1,10 +1,10 @@
 SIGNAL ENHANCER OBSERVATION
 
 Date:
-2026-06-11T00:24:44
+2026-06-11T07:30:42
 
 Target:
-Marianna Registry Reduction
+Test Observation
 
 Authority:
 NONE
@@ -21,19 +21,7 @@ UNKNOWN → HOLD
 
 SOURCE TEXT
 
-Existence
-↓
-Objecthood
-↓
-Localization
-↓
-Irreducible Localization
-↓
-Architectural Necessity
-↓
-Admission Necessity
-↓
-Registry Admission
+Parser validation test
 
 ────────────────────────────────────
 
@@ -69,25 +57,25 @@ boundary_forming
 
 PRESSURE
 
-pressure_relocating
+pressure_accumulating
 
 ────────────────────────────────────
 
 STANDING
 
-standing_unknown
+standing_candidate
 
 ────────────────────────────────────
 
 CONSEQUENCE HORIZON
 
-horizon_forming
+horizon_unknown
 
 ────────────────────────────────────
 
 NOTES
 
-Pressure appears moving upstream from object candidates toward admission criteria and constitutional basis questions.
+Parser validation test.
 
 ────────────────────────────────────
 

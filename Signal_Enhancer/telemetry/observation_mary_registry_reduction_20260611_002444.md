@@ -4,7 +4,7 @@ Date:
 2026-06-11T00:24:44
 
 Target:
-Marianna Registry Reduction
+Mary Registry Reduction
 
 Authority:
 NONE
@@ -91,7 +91,7 @@ Pressure appears moving upstream from object candidates toward admission criteri
 
 ────────────────────────────────────
 
-BOUNDARY
+BOUNDARY STATEMENT
 
 This record observes signals only.
 
