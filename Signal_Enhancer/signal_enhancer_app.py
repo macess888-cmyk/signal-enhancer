@@ -5,7 +5,7 @@ from pathlib import Path
 
 import streamlit as st
 
-st.set_page_config(page_title="Signal Enhancer v0.6", layout="wide")
+st.set_page_config(page_title="Signal Enhancer v0.7", layout="wide")
 
 BASE = Path(__file__).parent
 TELEMETRY = BASE / "telemetry"
@@ -32,7 +32,12 @@ def extract_section(text: str, section: str) -> str:
     section = section.strip().upper()
 
     for i, line in enumerate(lines):
-        if line.strip().upper() == section:
+        if line.strip().upper().rstrip(":") == section:
+            if line.strip().endswith(":"):
+                for next_line in lines[i + 1:]:
+                    stripped = next_line.strip()
+                    if stripped:
+                        return stripped
             collected = []
 
             for next_line in lines[i + 1:]:
@@ -113,6 +118,7 @@ def summarize_observation(path: Path) -> dict:
 
     return {
         "File": path.name,
+        "Date": extract_section(text, "Date"),
         "Target": extract_section(text, "Target"),
         "Pulse": extract_section(text, "PULSE"),
         "Movement": extract_section(text, "MOVEMENT"),
@@ -280,18 +286,96 @@ def evidence_summary(files):
     }
 
 
-st.title("Signal Enhancer v0.6")
+def parse_observation_datetime(value: str):
+    try:
+        return datetime.fromisoformat(value.strip())
+    except Exception:
+        return None
+
+
+def timeline_rows(files):
+    rows = []
+
+    for file in files:
+        summary = summarize_observation(file)
+        parsed_date = parse_observation_datetime(summary["Date"])
+
+        rows.append({
+            "File": file.name,
+            "Date": summary["Date"],
+            "Parsed Date": parsed_date,
+            "Target": summary["Target"],
+            "Pulse": summary["Pulse"],
+            "Movement": summary["Movement"],
+            "Phase": summary["Phase"],
+            "Relationship": summary["Relationship"],
+            "Boundary": summary["Boundary"],
+            "Pressure": summary["Pressure"],
+            "Standing": summary["Standing"],
+            "Consequence Horizon": summary["Consequence Horizon"],
+        })
+
+    return rows
+
+
+def unique_targets(rows):
+    return sorted(
+        {
+            row["Target"]
+            for row in rows
+            if row["Target"] and row["Target"] != "not_found"
+        }
+    )
+
+
+def stability_rows(rows):
+    output = []
+
+    if not rows:
+        return output
+
+    for sensor in SENSORS:
+        display_name = sensor.title()
+        values = []
+
+        for row in rows:
+            key = display_name
+            if key in row:
+                values.append(row[key])
+
+        clean_values = [value for value in values if value and value != "not_found"]
+        unique_values = sorted(set(clean_values))
+
+        if not clean_values:
+            status = "not_found"
+        elif len(unique_values) == 1:
+            status = "stable"
+        else:
+            status = "change_detected"
+
+        output.append({
+            "Sensor": display_name,
+            "Status": status,
+            "Unique Values": ", ".join(unique_values) if unique_values else "NONE",
+            "Observation Count": len(clean_values),
+        })
+
+    return output
+
+
+st.title("Signal Enhancer v0.7")
 st.caption(
     "Observation ≠ Authority | Signal ≠ Decision | Pattern ≠ Truth | "
-    "Evidence ≠ Authority | UNKNOWN → HOLD"
+    "Evidence ≠ Authority | Timeline ≠ Prediction | UNKNOWN → HOLD"
 )
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "Create Observation",
     "Compare Observations",
     "Observation Explorer",
     "Pattern Explorer",
     "Evidence Dashboard",
+    "Observation Timeline",
 ])
 
 # -------------------------
@@ -800,7 +884,6 @@ with tab5:
         st.info("No observation_*.md files found in telemetry/.")
     else:
         summary = evidence_summary(files)
-        pattern_counter = build_pattern_counter(files)
         unknown_counter = count_unknown_surfaces(files)
 
         st.markdown("### Corpus Health")
@@ -883,5 +966,126 @@ with tab5:
             "Evidence ≠ Decision. "
             "Frequency ≠ Truth. "
             "Pattern ≠ Permission. "
+            "UNKNOWN → HOLD."
+        )
+
+# -------------------------
+# TAB 6: OBSERVATION TIMELINE
+# -------------------------
+with tab6:
+    st.subheader("Observation Timeline")
+
+    files = observation_files()
+
+    if not files:
+        st.info("No observation_*.md files found in telemetry/.")
+    else:
+        rows = timeline_rows(files)
+        targets = unique_targets(rows)
+
+        parsed_dates = [
+            row["Parsed Date"]
+            for row in rows
+            if row["Parsed Date"] is not None
+        ]
+
+        st.markdown("### Timeline Status")
+
+        col_a, col_b, col_c, col_d = st.columns(4)
+
+        with col_a:
+            st.metric("Observation Files", len(rows))
+
+        with col_b:
+            st.metric("Unique Targets", len(targets))
+
+        with col_c:
+            earliest = min(parsed_dates).isoformat(timespec="seconds") if parsed_dates else "UNKNOWN"
+            st.metric("Earliest Observation", earliest)
+
+        with col_d:
+            latest = max(parsed_dates).isoformat(timespec="seconds") if parsed_dates else "UNKNOWN"
+            st.metric("Latest Observation", latest)
+
+        st.divider()
+
+        target_filter_options = ["All Targets"] + targets
+
+        selected_target = st.selectbox(
+            "Target Filter",
+            target_filter_options
+        )
+
+        sort_mode = st.selectbox(
+            "Timeline Sort",
+            ["Newest First", "Oldest First"]
+        )
+
+        filtered_rows = rows
+
+        if selected_target != "All Targets":
+            filtered_rows = [
+                row
+                for row in filtered_rows
+                if row["Target"] == selected_target
+            ]
+
+        if sort_mode == "Oldest First":
+            filtered_rows = sorted(
+                filtered_rows,
+                key=lambda row: row["Parsed Date"] or datetime.min
+            )
+        else:
+            filtered_rows = sorted(
+                filtered_rows,
+                key=lambda row: row["Parsed Date"] or datetime.min,
+                reverse=True
+            )
+
+        st.markdown("### Timeline Records")
+
+        display_rows = []
+
+        for row in filtered_rows:
+            display_rows.append({
+                "Date": row["Date"],
+                "Target": row["Target"],
+                "Pulse": row["Pulse"],
+                "Movement": row["Movement"],
+                "Phase": row["Phase"],
+                "Relationship": row["Relationship"],
+                "Boundary": row["Boundary"],
+                "Pressure": row["Pressure"],
+                "Standing": row["Standing"],
+                "Consequence Horizon": row["Consequence Horizon"],
+                "File": row["File"],
+            })
+
+        if display_rows:
+            st.table(display_rows)
+        else:
+            st.warning("No timeline records matched the current filter.")
+
+        st.divider()
+
+        st.markdown("### Stability / Change Detection")
+
+        stability = stability_rows(filtered_rows)
+
+        if stability:
+            st.table(stability)
+        else:
+            st.info("No stability data available.")
+
+        st.divider()
+
+        st.markdown("### Timeline Boundary")
+
+        st.caption(
+            "Timeline visibility only. "
+            "Timeline ≠ Prediction. "
+            "Temporal order ≠ Causation. "
+            "Stability ≠ Authority. "
+            "Change ≠ Permission. "
             "UNKNOWN → HOLD."
         )
