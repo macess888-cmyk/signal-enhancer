@@ -5,7 +5,7 @@ from pathlib import Path
 
 import streamlit as st
 
-st.set_page_config(page_title="Signal Enhancer v0.6", layout="wide")
+st.set_page_config(page_title="Signal Enhancer v0.5", layout="wide")
 
 BASE = Path(__file__).parent
 TELEMETRY = BASE / "telemetry"
@@ -220,78 +220,14 @@ def build_unknown_pattern_counter(files) -> Counter:
     return counter
 
 
-def counter_to_rows(counter: Counter, label: str = "Value"):
-    return [
-        {
-            label: key,
-            "Count": value,
-        }
-        for key, value in counter.most_common()
-    ]
+st.title("Signal Enhancer v0.5")
+st.caption("Observation ≠ Authority | Signal ≠ Decision | Pattern ≠ Truth | UNKNOWN → HOLD")
 
-
-def emerging_signal_rows(files):
-    rows = []
-
-    for sensor in SENSORS:
-        counter = build_frequency_counter(files, sensor)
-
-        for value, count in counter.most_common():
-            if count > 1:
-                rows.append({
-                    "Sensor": sensor.title(),
-                    "Signal": value,
-                    "Count": count,
-                    "Status": "recurring",
-                })
-
-    return rows
-
-
-def rare_signal_rows(files):
-    rows = []
-
-    for sensor in SENSORS:
-        counter = build_frequency_counter(files, sensor)
-
-        for value, count in counter.most_common():
-            if count == 1:
-                rows.append({
-                    "Sensor": sensor.title(),
-                    "Signal": value,
-                    "Count": count,
-                    "Status": "rare",
-                })
-
-    return rows
-
-
-def evidence_summary(files):
-    pattern_counter = build_pattern_counter(files)
-    unknown_counter = count_unknown_surfaces(files)
-
-    return {
-        "Observation Count": len(files),
-        "Unique Pulse / Movement / Phase Patterns": len(pattern_counter),
-        "UNKNOWN Surface Count": sum(unknown_counter.values()),
-        "Architecture": "FROZEN",
-        "Authority": "NONE",
-        "Promotion": "NONE",
-    }
-
-
-st.title("Signal Enhancer v0.6")
-st.caption(
-    "Observation ≠ Authority | Signal ≠ Decision | Pattern ≠ Truth | "
-    "Evidence ≠ Authority | UNKNOWN → HOLD"
-)
-
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
+tab1, tab2, tab3, tab4 = st.tabs([
     "Create Observation",
     "Compare Observations",
     "Observation Explorer",
     "Pattern Explorer",
-    "Evidence Dashboard",
 ])
 
 # -------------------------
@@ -785,103 +721,5 @@ with tab4:
             "Pattern ≠ Authority. "
             "Frequency ≠ Truth. "
             "Frequency ≠ Permission. "
-            "UNKNOWN → HOLD."
-        )
-
-# -------------------------
-# TAB 5: EVIDENCE DASHBOARD
-# -------------------------
-with tab5:
-    st.subheader("Evidence Dashboard")
-
-    files = observation_files()
-
-    if not files:
-        st.info("No observation_*.md files found in telemetry/.")
-    else:
-        summary = evidence_summary(files)
-        pattern_counter = build_pattern_counter(files)
-        unknown_counter = count_unknown_surfaces(files)
-
-        st.markdown("### Corpus Health")
-
-        col_a, col_b, col_c, col_d, col_e = st.columns(5)
-
-        with col_a:
-            st.metric("Observation Files", summary["Observation Count"])
-
-        with col_b:
-            st.metric("Unique Patterns", summary["Unique Pulse / Movement / Phase Patterns"])
-
-        with col_c:
-            st.metric("UNKNOWN Surfaces", summary["UNKNOWN Surface Count"])
-
-        with col_d:
-            st.metric("Authority", "NONE")
-
-        with col_e:
-            st.metric("Architecture", "FROZEN")
-
-        st.divider()
-
-        st.markdown("### Top Signal States")
-
-        top_col_1, top_col_2, top_col_3, top_col_4 = st.columns(4)
-
-        with top_col_1:
-            st.markdown("#### Pulse")
-            st.table(counter_to_rows(build_frequency_counter(files, "PULSE"), "Pulse"))
-
-        with top_col_2:
-            st.markdown("#### Pressure")
-            st.table(counter_to_rows(build_frequency_counter(files, "PRESSURE"), "Pressure"))
-
-        with top_col_3:
-            st.markdown("#### Standing")
-            st.table(counter_to_rows(build_frequency_counter(files, "STANDING"), "Standing"))
-
-        with top_col_4:
-            st.markdown("#### Boundary")
-            st.table(counter_to_rows(build_frequency_counter(files, "BOUNDARY"), "Boundary"))
-
-        st.divider()
-
-        st.markdown("### UNKNOWN Surfaces")
-
-        if unknown_counter:
-            st.table(counter_to_rows(unknown_counter, "UNKNOWN Surface"))
-        else:
-            st.success("No UNKNOWN or not_found surfaces detected.")
-
-        st.divider()
-
-        st.markdown("### Emerging Signals")
-
-        emerging_rows = emerging_signal_rows(files)
-
-        if emerging_rows:
-            st.table(emerging_rows)
-        else:
-            st.info("No recurring signals detected yet.")
-
-        st.markdown("### Rare Signals")
-
-        rare_rows = rare_signal_rows(files)
-
-        if rare_rows:
-            st.table(rare_rows)
-        else:
-            st.info("No rare signals detected.")
-
-        st.divider()
-
-        st.markdown("### Evidence Boundary")
-
-        st.caption(
-            "Evidence Dashboard provides visibility only. "
-            "Evidence ≠ Authority. "
-            "Evidence ≠ Decision. "
-            "Frequency ≠ Truth. "
-            "Pattern ≠ Permission. "
             "UNKNOWN → HOLD."
         )
