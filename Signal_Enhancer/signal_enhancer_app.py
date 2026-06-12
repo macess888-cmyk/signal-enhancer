@@ -5,7 +5,7 @@ from pathlib import Path
 
 import streamlit as st
 
-st.set_page_config(page_title="Signal Enhancer v0.4", layout="wide")
+st.set_page_config(page_title="Signal Enhancer v0.5", layout="wide")
 
 BASE = Path(__file__).parent
 TELEMETRY = BASE / "telemetry"
@@ -151,13 +151,83 @@ def count_unknown_surfaces(files) -> Counter:
     return counter
 
 
-st.title("Signal Enhancer v0.4")
-st.caption("Observation ≠ Authority | Signal ≠ Decision | UNKNOWN → HOLD")
+def build_pattern_counter(files) -> Counter:
+    counter = Counter()
 
-tab1, tab2, tab3 = st.tabs([
+    for file in files:
+        text = read_file(file)
+
+        pattern = (
+            extract_section(text, "PULSE"),
+            extract_section(text, "MOVEMENT"),
+            extract_section(text, "PHASE"),
+        )
+
+        counter[pattern] += 1
+
+    return counter
+
+
+def build_standing_pressure_counter(files) -> Counter:
+    counter = Counter()
+
+    for file in files:
+        text = read_file(file)
+
+        pattern = (
+            extract_section(text, "STANDING"),
+            extract_section(text, "PRESSURE"),
+        )
+
+        counter[pattern] += 1
+
+    return counter
+
+
+def build_boundary_horizon_counter(files) -> Counter:
+    counter = Counter()
+
+    for file in files:
+        text = read_file(file)
+
+        pattern = (
+            extract_section(text, "BOUNDARY"),
+            extract_section(text, "CONSEQUENCE HORIZON"),
+        )
+
+        counter[pattern] += 1
+
+    return counter
+
+
+def build_unknown_pattern_counter(files) -> Counter:
+    counter = Counter()
+
+    for file in files:
+        text = read_file(file)
+
+        pattern = []
+
+        for sensor in SENSORS:
+            value = extract_section(text, sensor)
+
+            if "unknown" in value.lower() or "not_found" in value.lower():
+                pattern.append(sensor)
+
+        if pattern:
+            counter[tuple(pattern)] += 1
+
+    return counter
+
+
+st.title("Signal Enhancer v0.5")
+st.caption("Observation ≠ Authority | Signal ≠ Decision | Pattern ≠ Truth | UNKNOWN → HOLD")
+
+tab1, tab2, tab3, tab4 = st.tabs([
     "Create Observation",
     "Compare Observations",
     "Observation Explorer",
+    "Pattern Explorer",
 ])
 
 # -------------------------
@@ -462,9 +532,9 @@ with tab3:
     if not files:
         st.info("No observation_*.md files found in telemetry/.")
     else:
-        summaries = [summarize_observation(file) for file in files]
-
         st.markdown("### Corpus Status")
+
+        unknown_counter = count_unknown_surfaces(files)
 
         col_a, col_b, col_c = st.columns(3)
 
@@ -472,7 +542,6 @@ with tab3:
             st.metric("Observation Files", len(files))
 
         with col_b:
-            unknown_counter = count_unknown_surfaces(files)
             st.metric("UNKNOWN Surfaces", sum(unknown_counter.values()))
 
         with col_c:
@@ -556,3 +625,101 @@ with tab3:
             st.success("No UNKNOWN or not_found surfaces detected.")
 
         st.caption("Observation Explorer observes stored records only. It grants no authority.")
+
+# -------------------------
+# TAB 4: PATTERN EXPLORER
+# -------------------------
+with tab4:
+    st.subheader("Pattern Explorer")
+
+    files = observation_files()
+
+    if not files:
+        st.info("No observation_*.md files found in telemetry/.")
+    else:
+        pattern_counter = build_pattern_counter(files)
+        standing_pressure_counter = build_standing_pressure_counter(files)
+        boundary_horizon_counter = build_boundary_horizon_counter(files)
+        unknown_pattern_counter = build_unknown_pattern_counter(files)
+
+        st.markdown("### Pattern Status")
+
+        col_a, col_b, col_c = st.columns(3)
+
+        with col_a:
+            st.metric("Observation Files", len(files))
+
+        with col_b:
+            st.metric("Unique Pulse / Movement / Phase Patterns", len(pattern_counter))
+
+        with col_c:
+            st.metric("UNKNOWN Pattern Types", len(unknown_pattern_counter))
+
+        st.divider()
+
+        st.markdown("### Most Common Pulse / Movement / Phase Patterns")
+
+        common_patterns = pattern_counter.most_common(10)
+
+        if common_patterns:
+            for pattern, count in common_patterns:
+                st.write({
+                    "count": count,
+                    "pulse": pattern[0],
+                    "movement": pattern[1],
+                    "phase": pattern[2],
+                })
+        else:
+            st.info("No patterns found.")
+
+        st.divider()
+
+        st.markdown("### Standing / Pressure Patterns")
+
+        if standing_pressure_counter:
+            for pattern, count in standing_pressure_counter.most_common(10):
+                st.write({
+                    "count": count,
+                    "standing": pattern[0],
+                    "pressure": pattern[1],
+                })
+        else:
+            st.info("No standing / pressure patterns found.")
+
+        st.divider()
+
+        st.markdown("### Boundary / Consequence Horizon Patterns")
+
+        if boundary_horizon_counter:
+            for pattern, count in boundary_horizon_counter.most_common(10):
+                st.write({
+                    "count": count,
+                    "boundary": pattern[0],
+                    "consequence_horizon": pattern[1],
+                })
+        else:
+            st.info("No boundary / consequence horizon patterns found.")
+
+        st.divider()
+
+        st.markdown("### UNKNOWN Patterns")
+
+        if unknown_pattern_counter:
+            for pattern, count in unknown_pattern_counter.most_common(10):
+                st.write({
+                    "count": count,
+                    "unknown_surfaces": list(pattern),
+                })
+        else:
+            st.success("No UNKNOWN patterns detected.")
+
+        st.divider()
+
+        st.markdown("### Observatory Statement")
+        st.caption(
+            "Pattern visibility only. "
+            "Pattern ≠ Authority. "
+            "Frequency ≠ Truth. "
+            "Frequency ≠ Permission. "
+            "UNKNOWN → HOLD."
+        )
