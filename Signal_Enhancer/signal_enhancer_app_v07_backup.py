@@ -5,7 +5,7 @@ from pathlib import Path
 
 import streamlit as st
 
-st.set_page_config(page_title="Signal Enhancer v0.8", layout="wide")
+st.set_page_config(page_title="Signal Enhancer v0.7", layout="wide")
 
 BASE = Path(__file__).parent
 TELEMETRY = BASE / "telemetry"
@@ -19,7 +19,6 @@ SENSORS = [
     "BOUNDARY",
     "PRESSURE",
     "STANDING",
-    "INTERRUPTIBILITY",
     "CONSEQUENCE HORIZON",
 ]
 
@@ -128,7 +127,6 @@ def summarize_observation(path: Path) -> dict:
         "Boundary": extract_section(text, "BOUNDARY"),
         "Pressure": extract_section(text, "PRESSURE"),
         "Standing": extract_section(text, "STANDING"),
-        "Interruptibility": extract_section(text, "INTERRUPTIBILITY"),
         "Consequence Horizon": extract_section(text, "CONSEQUENCE HORIZON"),
         "Notes": extract_section(text, "NOTES"),
     }
@@ -185,22 +183,6 @@ def build_standing_pressure_counter(files) -> Counter:
         pattern = (
             extract_section(text, "STANDING"),
             extract_section(text, "PRESSURE"),
-        )
-
-        counter[pattern] += 1
-
-    return counter
-
-
-def build_standing_interruptibility_counter(files) -> Counter:
-    counter = Counter()
-
-    for file in files:
-        text = read_file(file)
-
-        pattern = (
-            extract_section(text, "STANDING"),
-            extract_section(text, "INTERRUPTIBILITY"),
         )
 
         counter[pattern] += 1
@@ -330,7 +312,6 @@ def timeline_rows(files):
             "Boundary": summary["Boundary"],
             "Pressure": summary["Pressure"],
             "Standing": summary["Standing"],
-            "Interruptibility": summary["Interruptibility"],
             "Consequence Horizon": summary["Consequence Horizon"],
         })
 
@@ -382,7 +363,7 @@ def stability_rows(rows):
     return output
 
 
-st.title("Signal Enhancer v0.8")
+st.title("Signal Enhancer v0.7")
 st.caption(
     "Observation ≠ Authority | Signal ≠ Decision | Pattern ≠ Truth | "
     "Evidence ≠ Authority | Timeline ≠ Prediction | UNKNOWN → HOLD"
@@ -451,14 +432,6 @@ with tab1:
             "standing_unknown", "standing_candidate",
             "standing_accumulating", "standing_persistent",
             "standing_protected", "authority_like_standing_candidate"
-        ])
-
-        interruptibility = st.selectbox("Interruptibility", [
-            "interruptibility_unknown",
-            "interruptibility_open",
-            "interruptibility_narrowing",
-            "interruptibility_resistant",
-            "interruptibility_self_reinforcing",
         ])
 
         horizon = st.selectbox("Consequence Horizon", [
@@ -539,12 +512,6 @@ PRESSURE
 STANDING
 
 {standing}
-
-────────────────────────────────────
-
-INTERRUPTIBILITY
-
-{interruptibility}
 
 ────────────────────────────────────
 
@@ -784,7 +751,7 @@ with tab3:
 
         st.markdown("### Frequency Analysis")
 
-        freq_col_1, freq_col_2, freq_col_3, freq_col_4 = st.columns(4)
+        freq_col_1, freq_col_2, freq_col_3 = st.columns(3)
 
         with freq_col_1:
             st.markdown("#### Pulse")
@@ -797,10 +764,6 @@ with tab3:
         with freq_col_3:
             st.markdown("#### Standing")
             st.json(dict(build_frequency_counter(files, "STANDING")))
-
-        with freq_col_4:
-            st.markdown("#### Interruptibility")
-            st.json(dict(build_frequency_counter(files, "INTERRUPTIBILITY")))
 
         st.markdown("### UNKNOWN / HOLD Frequency")
 
@@ -824,7 +787,6 @@ with tab4:
     else:
         pattern_counter = build_pattern_counter(files)
         standing_pressure_counter = build_standing_pressure_counter(files)
-        standing_interruptibility_counter = build_standing_interruptibility_counter(files)
         boundary_horizon_counter = build_boundary_horizon_counter(files)
         unknown_pattern_counter = build_unknown_pattern_counter(files)
 
@@ -871,20 +833,6 @@ with tab4:
                 })
         else:
             st.info("No standing / pressure patterns found.")
-
-        st.divider()
-
-        st.markdown("### Standing / Interruptibility Patterns")
-
-        if standing_interruptibility_counter:
-            for pattern, count in standing_interruptibility_counter.most_common(10):
-                st.write({
-                    "count": count,
-                    "standing": pattern[0],
-                    "interruptibility": pattern[1],
-                })
-        else:
-            st.info("No standing / interruptibility patterns found.")
 
         st.divider()
 
@@ -961,7 +909,7 @@ with tab5:
 
         st.markdown("### Top Signal States")
 
-        top_col_1, top_col_2, top_col_3, top_col_4, top_col_5 = st.columns(5)
+        top_col_1, top_col_2, top_col_3, top_col_4 = st.columns(4)
 
         with top_col_1:
             st.markdown("#### Pulse")
@@ -976,10 +924,6 @@ with tab5:
             st.table(counter_to_rows(build_frequency_counter(files, "STANDING"), "Standing"))
 
         with top_col_4:
-            st.markdown("#### Interruptibility")
-            st.table(counter_to_rows(build_frequency_counter(files, "INTERRUPTIBILITY"), "Interruptibility"))
-
-        with top_col_5:
             st.markdown("#### Boundary")
             st.table(counter_to_rows(build_frequency_counter(files, "BOUNDARY"), "Boundary"))
 
@@ -1113,7 +1057,6 @@ with tab6:
                 "Boundary": row["Boundary"],
                 "Pressure": row["Pressure"],
                 "Standing": row["Standing"],
-                "Interruptibility": row["Interruptibility"],
                 "Consequence Horizon": row["Consequence Horizon"],
                 "File": row["File"],
             })
