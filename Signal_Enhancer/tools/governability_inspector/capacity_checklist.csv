@@ -1,0 +1,10 @@
+capacity,question,status,notes
+Formation Visibility,Can relevant signals still be observed?,UNKNOWN,
+Preservation,Are records/context/witness paths preserved?,UNKNOWN,
+Continuity,Can state remain linked across time?,UNKNOWN,
+Self-Reconstruction,Can the system reconstruct what it is and how it got here?,UNKNOWN,
+Evaluability,Can the system evaluate what is admissible?,UNKNOWN,
+Admissibility,Can unsafe trajectories be screened before execution?,UNKNOWN,
+Correction Capacity,Can the system still intervene and change course?,UNKNOWN,
+Future Influence,Can meaningful outcomes still be altered?,UNKNOWN,
+Governability,Can responsible future stewardship still occur?,UNKNOWN,
