@@ -469,8 +469,47 @@ with tab1:
             "horizon_shrinking", "horizon_critical"
         ])
 
-    notes = st.text_area("Observation Notes", height=160)
+    st.markdown("### Recovery Assessment")
 
+    recovery_state = st.selectbox("Recovery State", [
+            "recovery_unknown",
+            "recoverable",
+            "partially_recoverable",
+            "unrecoverable"
+        ])
+
+    break_surface = st.selectbox("Break Surface", [
+            "break_surface_unknown",
+            "none",
+            "signal_loss",
+            "witness_loss",
+            "context_loss",
+            "attribution_loss",
+            "self_map_loss",
+            "correction_loss",
+            "optionality_loss"
+        ],
+    )
+
+    recovery_corridor = st.selectbox(
+        "Recovery Corridor", 
+        [
+            "corridor_unknown",
+            "corridor_open",
+            "corridor_narrowing",
+            "corridor_closed"
+        ],
+    )
+
+    next_inspection_target = st.text_input(
+        "Next Inspection Target"
+    )
+
+    notes = st.text_area(
+        "Observation Notes", 
+        height=160,
+    )
+    
     if st.button("Generate Observation Record"):
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = TELEMETRY / f"observation_{safe_filename(target)}_{timestamp}.md"
@@ -553,6 +592,30 @@ INTERRUPTIBILITY
 CONSEQUENCE HORIZON
 
 {horizon}
+
+────────────────────────────────────
+
+RECOVERY STATE
+
+{recovery_state}
+
+────────────────────────────────────
+
+BREAK SURFACE
+
+{break_surface}
+
+────────────────────────────────────
+
+RECOVERY CORRIDOR
+
+{recovery_corridor}
+
+────────────────────────────────────
+
+NEXT INSPECTION TARGET
+
+{next_inspection_target}
 
 ────────────────────────────────────
 
