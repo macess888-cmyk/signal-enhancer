@@ -388,13 +388,15 @@ st.caption(
     "Evidence ≠ Authority | Timeline ≠ Prediction | UNKNOWN → HOLD"
 )
 
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
     "Create Observation",
     "Compare Observations",
     "Observation Explorer",
     "Pattern Explorer",
     "Evidence Dashboard",
     "Observation Timeline",
+    "Inspectable Unknowns",
+    "Governability Inspector"
 ])
 
 # -------------------------
@@ -1146,3 +1148,24 @@ with tab6:
             "Change ≠ Permission. "
             "UNKNOWN → HOLD."
         )
+
+# -------------------------
+# TAB 7: INSPECTABLE UNKNOWNS
+# -------------------------
+with tab7:
+    st.subheader("Inspectable Unknown Explorer")
+    st.info("Integration in progress.")
+    st.caption(
+        "Discovery surface only. Unknowns ≠ conclusions. UNKNOWN → HOLD."
+    )
+
+
+# -------------------------
+# TAB 8: GOVERNABILITY INSPECTOR
+# -------------------------
+with tab8:
+    st.subheader("Continuous Governability Inspector")
+    st.info("Integration in progress.")
+    st.caption(
+        "Inspection surface only. Visibility ≠ Governability. UNKNOWN → HOLD."
+    )
